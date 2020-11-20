@@ -17,11 +17,9 @@
 
 int main(int argc, char* argv[]) {
 
-    char* background;
     char bg[] = "bg";
-    bool segundoPlano = false;
+    bool segundoPlano = 0;
     char ruta[] = "/usr/bin/";
-    char ejecucion[] = "";
     pid_t pid;
     int estado;
     
@@ -31,40 +29,79 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     } else {
         if(strcmp(argv[argc-1], bg) == 0) {
-            background = argv[argc-1];
-            segundoPlano = true;
+            segundoPlano = 1;
         }
     }
 
     // Concatenamos el nombre del programa
     sprintf(ruta, "%s%s", ruta, argv[1]);
 
-    if(segundoPlano) {
-        for(int i = 2; i < argc-1; i++) {
-            sprintf(ejecucion, "%s%s", ejecucion, argv[i]);
+    if(segundoPlano == 1) {
+        printf("Llega");
+        // Creo un array de longitud argc-1 porque el último parámetro es 'bg' y no nos interesa
+        char* ejecucion[argc-1];
+
+        // Lo inicializo y asigno el primer valor a ruta y el último valor a NULL
+        // La ruta debe de ser el primer valor del array porque así lo requiere execv
+        // A su vez, el array debe de terminar en NULL porque así lo requiere execv
+        for(int i=1; i < argc-2; i++)
+            ejecucion[i] = "";
+
+        ejecucion[0] = ruta;
+        ejecucion[argc-2] = NULL;
+
+        // Le asigno todos los parámetros
+        for(int i = 1; i < argc-2; i++) {
+            ejecucion[i] = argv[i+1];
         }
 
         if((pid = fork()) < 0) {
             perror("\nError en el fork");
             exit(EXIT_FAILURE);
         } else if(pid == 0) {
-            if(execl(ruta, ejecucion, NULL) < 0) {
+            if(execv(ruta, ejecucion) < 0) {
+                perror("Error en execv\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        wait(&estado);        
+        
+    } else {
+        if(argc == 2) {
+            char* ejecucion[2] = {"", NULL};
+
+            if(execv(ruta, ejecucion) < 0) {
                 perror("Error en execl\n");
                 exit(EXIT_FAILURE);
             }
         }
 
-        wait(&estado);
-        
-    } else {
-        for(int i = 2; i < argc; i++) {
-            sprintf(ejecucion, "%s%s", ejecucion, argv[i]);
+        else {
+            // Creo un array de longitud argc
+            char* ejecucion[argc];
+
+            // Lo inicializo y asigno el primer valor a ruta y el último valor a NULL
+            // La ruta debe de ser el primer valor del array porque así lo requiere execv
+            // A su vez, el array debe de terminar en NULL porque así lo requiere execv
+            for(int i=1; i < argc-1; i++)
+                ejecucion[i] = "";
+            
+            ejecucion[0] = ruta;
+            ejecucion[argc-1] = NULL;
+            
+            // Le asigno todos los parámetros
+            for(int i = 1; i < argc-1; i++) {
+                ejecucion[i] = argv[i+1];
+            }
+
+            if(execv(ruta, ejecucion) < 0) {
+                perror("Error en execv %d\n");
+                exit(EXIT_FAILURE);
+            }
         }
 
-        if(execl(ruta, ejecucion, NULL) < 0) {
-            perror("Error en execl\n");
-            exit(EXIT_FAILURE);
-        }
+        wait(&estado);
     }
 
     return EXIT_SUCCESS;
