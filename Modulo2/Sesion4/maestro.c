@@ -61,11 +61,12 @@ int main(int argc, char* argv[]) {
         // Duplicamos el descriptor de escritura para la salida
         // y llamamos al otro esclavo
         dup2(fd[1], STDOUT_FILENO);
-        execlp("/home/d3vcho/Escritorio/Uni/SO/Modulo 2/Sesion4/esclavo", "esclavo", extInf1, extSup1, NULL);
+        execlp("RUTA_AL_PROGRAMA/esclavo", "esclavo", extInf1, extSup1, NULL);
     } else {
-        // Creamos otro hijo
+        // Esperamos a que termine el hijo anterior para que los números salgan en orden
         wait(NULL);
 
+        // Creamos otro hijo
         if((esclavo2 = fork()) < 0) {
             printf("\nError en el fork");
             perror("\nError en la llamada fork");
@@ -78,9 +79,11 @@ int main(int argc, char* argv[]) {
             // Duplicamos el descriptor de escritura para la salida
             // y llamamos al otro esclavo
             dup2(fd[1], STDOUT_FILENO);
-            execlp("/home/d3vcho/Escritorio/Uni/SO/Modulo 2/Sesion4/esclavo", "esclavo", extInf2, extSup2, NULL);
+            execlp("RUTA_AL_PROGRAMA/esclavo", "esclavo", extInf2, extSup2, NULL);
         } else {
+            // Esperamos al otro hijo para finalizar el programa de forma correcta
             wait(NULL);
+
             // Proceso padre
             // Cerramos el descriptor de escritura
             close(fd[1]);
