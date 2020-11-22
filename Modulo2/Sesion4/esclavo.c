@@ -34,6 +34,8 @@ int main(int argc, char* argv[]) {
     extInf = strtol(argv[1], NULL, 10);
     extSup = strtol(argv[2], NULL, 10);
 
+    close(fd[0]);
+
     for(int i = extInf; i <= extSup; i++) {
         for(int j=2; j <= sqrt(i); j++) {
             if(i%j == 0) {
@@ -45,7 +47,6 @@ int main(int argc, char* argv[]) {
         if(primo == 0) {
             sprintf(numero, "%d\n", i);
             write(fd[1], numero, strlen(numero)+1);
-            printf("\n");
         }
 
         primo = 0;

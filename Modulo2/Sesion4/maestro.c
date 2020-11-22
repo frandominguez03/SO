@@ -15,7 +15,7 @@
 #include<sys/wait.h>
 
 int main(int argc, char* argv[]) {
-    int fd[2];
+    int primerEsclavo[2], segundoEsclavo[2];
     int extInfIntervalo1, extSupIntervalo1;
     int extInfIntervalo2, extSupIntervalo2;
     pid_t esclavo1;
@@ -47,7 +47,8 @@ int main(int argc, char* argv[]) {
     sprintf(extInf2, "%d", extInfIntervalo2);
     sprintf(extSup2, "%d", extSupIntervalo2);
 
-    pipe(fd);
+    pipe(primerEsclavo);
+    pipe(segundoEsclavo);
 
     if((esclavo1 = fork()) < 0) {
         printf("\nError en el fork");
@@ -56,17 +57,26 @@ int main(int argc, char* argv[]) {
     } else if(esclavo1 == 0) {
         // Proceso hijo
         // Cerramos el descriptor de lectura
-        close(fd[0]);
+        close(primerEsclavo[0]);
 
         // Duplicamos el descriptor de escritura para la salida
         // y llamamos al otro esclavo
-        dup2(fd[1], STDOUT_FILENO);
-        execlp("RUTA_AL_PROGRAMA/esclavo", "esclavo", extInf1, extSup1, NULL);
+        dup2(primerEsclavo[1], STDOUT_FILENO);
+        execlp("/home/d3vcho/Escritorio/Uni/SO/Modulo 2/Sesion4/esclavo", "esclavo", extInf1, extSup1, NULL);
     } else {
-        // Esperamos a que termine el hijo anterior para que los números salgan en orden
-        wait(NULL);
+        // Cerramos los descriptores de escritura del padre
+        close(primerEsclavo[1]);
+        close(segundoEsclavo[1]);
+
+        char* numeroLeido;
+
+        while(read(primerEsclavo[0], numeroLeido, sizeof(int)) > 0) {
+            printf("%d\n", atoi(numeroLeido));
+        }
 
         // Creamos otro hijo
+        wait(NULL);
+
         if((esclavo2 = fork()) < 0) {
             printf("\nError en el fork");
             perror("\nError en la llamada fork");
@@ -74,23 +84,21 @@ int main(int argc, char* argv[]) {
         } else if(esclavo2 == 0) {
             // Proceso hijo
             // Cerramos el descriptor de lectura
-            close(fd[0]);
+            close(segundoEsclavo[0]);
 
             // Duplicamos el descriptor de escritura para la salida
             // y llamamos al otro esclavo
-            dup2(fd[1], STDOUT_FILENO);
-            execlp("RUTA_AL_PROGRAMA/esclavo", "esclavo", extInf2, extSup2, NULL);
+            dup2(segundoEsclavo[1], STDOUT_FILENO);
+            execlp("/home/d3vcho/Escritorio/Uni/SO/Modulo 2/Sesion4/esclavo", "esclavo", extInf2, extSup2, NULL);
         } else {
-            // Esperamos al otro hijo para finalizar el programa de forma correcta
-            wait(NULL);
+            char* numeroLeido;
 
-            // Proceso padre
-            // Cerramos el descriptor de escritura
-            close(fd[1]);
-
-            // Duplicamos el descriptor de lectura para la entrada
-            dup2(fd[0], STDIN_FILENO);
+            while(read(segundoEsclavo[0], numeroLeido, sizeof(int)) > 0) {
+                printf("%d\n", atoi(numeroLeido));
+            }
         }
+
+        wait(NULL);
     }
 
     return EXIT_SUCCESS;
